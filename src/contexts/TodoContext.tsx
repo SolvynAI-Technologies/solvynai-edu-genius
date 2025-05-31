@@ -2,13 +2,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { TodoItem } from '@/types';
 import { useAuth } from './AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TodoContextType {
   todos: TodoItem[];
-  addTodo: (todo: Omit<TodoItem, 'id' | 'userId' | 'createdAt'>) => void;
-  updateTodo: (id: string, updates: Partial<TodoItem>) => void;
-  deleteTodo: (id: string) => void;
-  moveTodo: (id: string, newStatus: 'todo' | 'inProgress' | 'done') => void;
+  addTodo: (todo: Omit<TodoItem, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateTodo: (id: string, updates: Partial<TodoItem>) => Promise<void>;
+  deleteTodo: (id: string) => Promise<void>;
+  moveTodo: (id: string, newStatus: 'todo' | 'inProgress' | 'done') => Promise<void>;
 }
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined);
@@ -17,50 +18,120 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const { currentUser } = useAuth();
 
-  // Load todos from localStorage
+  // Load todos from Supabase
   useEffect(() => {
     if (currentUser) {
-      const savedTodos = localStorage.getItem(`solvyn_todos_${currentUser.id}`);
-      if (savedTodos) {
-        setTodos(JSON.parse(savedTodos));
-      }
+      fetchTodos();
+    } else {
+      setTodos([]);
     }
   }, [currentUser]);
 
-  // Save todos to localStorage whenever they change
-  useEffect(() => {
-    if (currentUser && todos.length > 0) {
-      localStorage.setItem(`solvyn_todos_${currentUser.id}`, JSON.stringify(todos));
-    }
-  }, [todos, currentUser]);
-
-  const addTodo = (todo: Omit<TodoItem, 'id' | 'userId' | 'createdAt'>) => {
+  const fetchTodos = async () => {
     if (!currentUser) return;
     
-    const newTodo: TodoItem = {
-      ...todo,
-      id: `todo-${Date.now()}`,
-      userId: currentUser.id,
-      createdAt: new Date().toISOString(),
-    };
+    const { data, error } = await supabase
+      .from('todos')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
     
-    setTodos([...todos, newTodo]);
+    if (error) {
+      console.error('Error fetching todos:', error);
+      return;
+    }
+    
+    const formattedTodos = data?.map(todo => ({
+      id: todo.id,
+      userId: todo.user_id,
+      title: todo.title,
+      description: todo.description || '',
+      status: todo.status as 'todo' | 'inProgress' | 'done',
+      priority: todo.priority as 'low' | 'medium' | 'high',
+      dueDate: todo.due_date,
+      completed: todo.completed,
+      createdAt: todo.created_at,
+    })) || [];
+    
+    setTodos(formattedTodos);
   };
 
-  const updateTodo = (id: string, updates: Partial<TodoItem>) => {
+  const addTodo = async (todo: Omit<TodoItem, 'id' | 'userId' | 'createdAt'>) => {
+    if (!currentUser) return;
+    
+    const { data, error } = await supabase
+      .from('todos')
+      .insert({
+        user_id: currentUser.id,
+        title: todo.title,
+        description: todo.description,
+        status: todo.status,
+        priority: todo.priority,
+        due_date: todo.dueDate,
+        completed: todo.completed,
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding todo:', error);
+      return;
+    }
+    
+    const newTodo: TodoItem = {
+      id: data.id,
+      userId: data.user_id,
+      title: data.title,
+      description: data.description || '',
+      status: data.status as 'todo' | 'inProgress' | 'done',
+      priority: data.priority as 'low' | 'medium' | 'high',
+      dueDate: data.due_date,
+      completed: data.completed,
+      createdAt: data.created_at,
+    };
+    
+    setTodos([newTodo, ...todos]);
+  };
+
+  const updateTodo = async (id: string, updates: Partial<TodoItem>) => {
+    const { error } = await supabase
+      .from('todos')
+      .update({
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        priority: updates.priority,
+        due_date: updates.dueDate,
+        completed: updates.completed,
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error updating todo:', error);
+      return;
+    }
+    
     setTodos(todos.map(todo => 
       todo.id === id ? { ...todo, ...updates } : todo
     ));
   };
 
-  const deleteTodo = (id: string) => {
+  const deleteTodo = async (id: string) => {
+    const { error } = await supabase
+      .from('todos')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting todo:', error);
+      return;
+    }
+    
     setTodos(todos.filter(todo => todo.id !== id));
   };
 
-  const moveTodo = (id: string, newStatus: 'todo' | 'inProgress' | 'done') => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, status: newStatus } : todo
-    ));
+  const moveTodo = async (id: string, newStatus: 'todo' | 'inProgress' | 'done') => {
+    await updateTodo(id, { status: newStatus });
   };
 
   return (

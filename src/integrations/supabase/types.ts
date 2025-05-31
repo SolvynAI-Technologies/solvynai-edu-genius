@@ -9,10 +9,163 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      focus_sessions: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          date: string | null
+          duration: number
+          id: string
+          task_description: string | null
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string | null
+          duration: number
+          id?: string
+          task_description?: string | null
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string | null
+          duration?: number
+          id?: string
+          task_description?: string | null
+          task_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "focus_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "todos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "focus_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "focus_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "focus_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          focus_time: number | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          school_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          focus_time?: number | null
+          full_name?: string | null
+          gender?: string | null
+          id: string
+          school_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          focus_time?: number | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          school_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      todos: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "focus_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      focus_leaderboard: {
+        Row: {
+          focus_time: number | null
+          full_name: string | null
+          id: string | null
+          rank: number | null
+          school_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

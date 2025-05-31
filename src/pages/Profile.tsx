@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,16 +7,56 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { User, Mail, School, Calendar, Clock, Trophy } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ProfileData {
+  id: string;
+  email: string;
+  full_name: string;
+  school_name: string;
+  gender: string;
+  focus_time: number;
+  avatar_url?: string;
+}
 
 const Profile = () => {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [formData, setFormData] = useState({
-    fullName: currentUser?.fullName || '',
-    schoolName: currentUser?.schoolName || '',
-    email: currentUser?.email || '',
+    fullName: '',
+    schoolName: '',
+    email: '',
   });
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchProfile();
+    }
+  }, [currentUser]);
+
+  const fetchProfile = async () => {
+    if (!currentUser) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return;
+    }
+    
+    setProfileData(data);
+    setFormData({
+      fullName: data.full_name || '',
+      schoolName: data.school_name || '',
+      email: data.email || '',
+    });
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -40,12 +80,21 @@ const Profile = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) return;
+    
     try {
-      await updateProfile({
-        fullName: formData.fullName,
-        schoolName: formData.schoolName,
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.fullName,
+          school_name: formData.schoolName,
+        })
+        .eq('id', currentUser.id);
+      
+      if (error) throw error;
+      
       setIsEditing(false);
+      fetchProfile();
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully.",
@@ -60,7 +109,7 @@ const Profile = () => {
     }
   };
 
-  if (!currentUser) return null;
+  if (!currentUser || !profileData) return null;
 
   return (
     <div className="container px-4 py-6 mx-auto max-w-6xl">
@@ -75,12 +124,12 @@ const Profile = () => {
           <Card className="text-center">
             <CardHeader>
               <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-r from-solvyn-500 to-accent2-500 flex items-center justify-center text-white text-3xl font-medium mb-4">
-                {getInitials(currentUser.fullName)}
+                {getInitials(profileData.full_name || 'User')}
               </div>
-              <CardTitle className="text-xl">{currentUser.fullName}</CardTitle>
+              <CardTitle className="text-xl">{profileData.full_name}</CardTitle>
               <CardDescription className="flex items-center justify-center gap-2">
                 <Mail size={16} />
-                {currentUser.email}
+                {profileData.email}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -90,7 +139,7 @@ const Profile = () => {
                     <School size={16} className="text-gray-500" />
                     <span className="text-sm font-medium">Institution</span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">{currentUser.schoolName}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{profileData.school_name || 'Not set'}</span>
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -98,7 +147,7 @@ const Profile = () => {
                     <Clock size={16} className="text-gray-500" />
                     <span className="text-sm font-medium">Focus Time</span>
                   </div>
-                  <Badge variant="secondary">{formatFocusTime(currentUser.focusTime)}</Badge>
+                  <Badge variant="secondary">{formatFocusTime(profileData.focus_time || 0)}</Badge>
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -106,7 +155,7 @@ const Profile = () => {
                     <User size={16} className="text-gray-500" />
                     <span className="text-sm font-medium">Gender</span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">{currentUser.gender}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">{profileData.gender || 'Not set'}</span>
                 </div>
               </div>
             </CardContent>
@@ -180,9 +229,9 @@ const Profile = () => {
                       variant="outline"
                       onClick={() => {
                         setFormData({
-                          fullName: currentUser.fullName,
-                          schoolName: currentUser.schoolName,
-                          email: currentUser.email,
+                          fullName: profileData.full_name || '',
+                          schoolName: profileData.school_name || '',
+                          email: profileData.email || '',
                         });
                         setIsEditing(false);
                       }}
@@ -193,26 +242,6 @@ const Profile = () => {
                   </div>
                 )}
               </form>
-            </CardContent>
-          </Card>
-
-          {/* Account Security */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Security</CardTitle>
-              <CardDescription>
-                Manage your account security settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button variant="outline" className="w-full md:w-auto">
-                  Change Password
-                </Button>
-                <p className="text-sm text-gray-500">
-                  Update your password to keep your account secure
-                </p>
-              </div>
             </CardContent>
           </Card>
 
@@ -230,7 +259,7 @@ const Profile = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-gradient-to-r from-solvyn-50 to-accent2-50 dark:from-solvyn-900/20 dark:to-accent2-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-solvyn-600 dark:text-solvyn-400">{formatFocusTime(currentUser.focusTime)}</div>
+                  <div className="text-2xl font-bold text-solvyn-600 dark:text-solvyn-400">{formatFocusTime(profileData.focus_time || 0)}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Total Focus</div>
                 </div>
                 <div className="text-center p-4 bg-gradient-to-r from-accent2-50 to-solvyn-50 dark:from-accent2-900/20 dark:to-solvyn-900/20 rounded-lg">

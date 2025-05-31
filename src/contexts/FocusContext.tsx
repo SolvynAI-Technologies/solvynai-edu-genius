@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { FocusSession } from '@/types';
 import { useAuth } from './AuthContext';
 import { useTodo } from './TodoContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FocusContextType {
   sessions: FocusSession[];
@@ -27,25 +28,44 @@ export const FocusProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [intervalId, setIntervalId] = useState<number | null>(null);
   
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser } = useAuth();
   const { updateTodo } = useTodo();
   
-  // Load sessions from localStorage
+  // Load sessions from Supabase
   useEffect(() => {
     if (currentUser) {
-      const savedSessions = localStorage.getItem(`solvyn_focus_${currentUser.id}`);
-      if (savedSessions) {
-        setSessions(JSON.parse(savedSessions));
-      }
+      fetchSessions();
+    } else {
+      setSessions([]);
     }
   }, [currentUser]);
   
-  // Save sessions to localStorage whenever they change
-  useEffect(() => {
-    if (currentUser && sessions.length > 0) {
-      localStorage.setItem(`solvyn_focus_${currentUser.id}`, JSON.stringify(sessions));
+  const fetchSessions = async () => {
+    if (!currentUser) return;
+    
+    const { data, error } = await supabase
+      .from('focus_sessions')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching sessions:', error);
+      return;
     }
-  }, [sessions, currentUser]);
+    
+    const formattedSessions = data?.map(session => ({
+      id: session.id,
+      userId: session.user_id,
+      duration: session.duration,
+      completed: session.completed,
+      taskDescription: session.task_description,
+      taskId: session.task_id,
+      date: session.date,
+    })) || [];
+    
+    setSessions(formattedSessions);
+  };
   
   // Timer countdown
   useEffect(() => {
@@ -70,9 +90,7 @@ export const FocusProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isActive, isPaused, activeSession]);
   
   const startSession = (duration: number, taskDescription?: string, taskId?: string) => {
-    if (isActive) return;
-    
-    if (!currentUser) return;
+    if (isActive || !currentUser) return;
     
     const newSession: FocusSession = {
       id: `focus-${Date.now()}`,
@@ -90,7 +108,7 @@ export const FocusProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsPaused(false);
   };
   
-  const completeSession = () => {
+  const completeSession = async () => {
     if (!activeSession || !currentUser) return;
     
     clearInterval(intervalId!);
@@ -101,18 +119,29 @@ export const FocusProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       completed: true,
     };
     
-    // Add to sessions history
-    setSessions(prev => [completedSession, ...prev]);
+    // Save to Supabase
+    const { error } = await supabase
+      .from('focus_sessions')
+      .insert({
+        user_id: currentUser.id,
+        duration: completedSession.duration,
+        completed: true,
+        task_description: completedSession.taskDescription,
+        task_id: completedSession.taskId,
+        date: completedSession.date,
+      });
     
-    // If linked to a todo item, mark it as completed
-    if (completedSession.taskId) {
-      updateTodo(completedSession.taskId, { completed: true });
+    if (error) {
+      console.error('Error saving focus session:', error);
+    } else {
+      // Add to sessions history
+      setSessions(prev => [completedSession, ...prev]);
+      
+      // If linked to a todo item, mark it as completed
+      if (completedSession.taskId) {
+        updateTodo(completedSession.taskId, { completed: true });
+      }
     }
-    
-    // Update user's total focus time
-    updateProfile({
-      focusTime: (currentUser.focusTime || 0) + completedSession.duration
-    });
     
     // Reset active session
     setActiveSession(null);
