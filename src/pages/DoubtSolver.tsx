@@ -92,158 +92,186 @@ const DoubtSolver = () => {
     }
   };
   
+  if (solution) {
+    return (
+      <div className="container px-4 py-6 mx-auto max-w-7xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Expert Solution 🎯</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Step-by-step explanation with learning insights
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setSolution(null);
+              setFormData({
+                grade: '',
+                subject: '',
+                board: '',
+                question: '',
+              });
+            }}
+          >
+            Ask New Question
+          </Button>
+        </div>
+        
+        <Card className="h-full">
+          <CardContent className="p-6">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="whitespace-pre-wrap rounded-md bg-slate-50 dark:bg-slate-900 p-6 border">
+                {solution}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   return (
-    <div className="container px-4 py-6 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6">AI Doubt Solver</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <form onSubmit={handleSubmit}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Doubt</CardTitle>
-                <CardDescription>
-                  Ask any academic question and get expert solutions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Grade/Class</label>
-                    <Select
-                      value={formData.grade}
-                      onValueChange={(value) => handleFormChange('grade', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {gradeOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Subject</label>
-                    <Select
-                      value={formData.subject}
-                      onValueChange={(value) => handleFormChange('subject', value)}
-                      disabled={!formData.grade}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjectOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Board</label>
-                    <Select
-                      value={formData.board}
-                      onValueChange={(value) => handleFormChange('board', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select board" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {boardOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+    <div className="container px-4 py-6 mx-auto max-w-4xl">
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white mb-6">
+          <h1 className="text-3xl font-bold mb-2 flex items-center">
+            ❓ AI Doubt Solver
+          </h1>
+          <p className="text-green-100">
+            Get step-by-step solutions and explanations for your academic doubts
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          {/* Question Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Question Configuration</CardTitle>
+              <CardDescription>
+                Set up your question details for better AI assistance
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Grade</label>
+                  <Select
+                    value={formData.grade}
+                    onValueChange={(value) => handleFormChange('grade', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gradeOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium">Your Question</label>
-                    <label htmlFor="question-upload" className="cursor-pointer text-xs text-solvyn-600 hover:text-solvyn-700 dark:text-solvyn-400 flex items-center">
-                      <UploadIcon className="w-3 h-3 mr-1" />
-                      Upload File
-                      <Input
-                        id="question-upload"
-                        type="file"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                        accept=".txt,.doc,.docx,application/msword,.jpg,.jpeg,.png"
-                      />
-                    </label>
-                  </div>
-                  <Textarea
-                    value={formData.question}
-                    onChange={(e) => handleFormChange('question', e.target.value)}
-                    placeholder="Type your doubt or question here..."
-                    rows={8}
-                    className="min-h-[200px]"
-                  />
+                  <label className="text-sm font-medium">Subject</label>
+                  <Select
+                    value={formData.subject}
+                    onValueChange={(value) => handleFormChange('subject', value)}
+                    disabled={!formData.grade}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-solvyn-600 to-accent2-600 hover:from-solvyn-700 hover:to-accent2-700"
-                  disabled={isSolving}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Board of Education</label>
+                <Select
+                  value={formData.board}
+                  onValueChange={(value) => handleFormChange('board', value)}
                 >
-                  {isSolving ? (
-                    <span className="flex items-center">
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-t-2 border-white"></span>
-                      Solving...
-                    </span>
-                  ) : (
-                    "Solve My Doubt"
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </form>
-        </div>
-        
-        <div>
-          <Card className="h-full flex flex-col">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boardOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enter Your Question */}
+          <Card>
             <CardHeader>
-              <CardTitle>Expert Solution</CardTitle>
+              <CardTitle>Enter Your Question</CardTitle>
               <CardDescription>
-                Step-by-step explanation with learning insights
+                Type your question or doubt clearly
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 overflow-auto">
-              {solution ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap rounded-md bg-slate-50 dark:bg-slate-900 p-4">
-                    {solution}
-                  </div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Your Question</label>
+                  <label htmlFor="question-upload" className="cursor-pointer text-xs text-green-600 hover:text-green-700 dark:text-green-400 flex items-center">
+                    <UploadIcon className="w-3 h-3 mr-1" />
+                    Upload File
+                    <Input
+                      id="question-upload"
+                      type="file"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      accept=".txt,.doc,.docx,application/msword,.jpg,.jpeg,.png"
+                    />
+                  </label>
                 </div>
-              ) : (
-                <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-900 rounded-lg border border-dashed p-8">
-                  <div className="text-center">
-                    <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">No Solution Yet</h3>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Ask a question to receive a step-by-step solution
-                    </p>
-                  </div>
-                </div>
-              )}
+                <Textarea
+                  value={formData.question}
+                  onChange={(e) => handleFormChange('question', e.target.value)}
+                  placeholder="Enter your question or doubt here. Be as specific as possible for better help..."
+                  rows={8}
+                  className="min-h-[200px]"
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                disabled={isSolving}
+                size="lg"
+              >
+                {isSolving ? (
+                  <span className="flex items-center">
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-t-2 border-white"></span>
+                    Solving Your Doubt...
+                  </span>
+                ) : (
+                  "Solve My Doubt"
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </form>
       
-      <Card className="mt-6">
+      {/* Common Doubts */}
+      <Card className="mt-8">
         <CardHeader>
           <CardTitle>Common Doubts</CardTitle>
           <CardDescription>
@@ -286,8 +314,8 @@ const DoubtSolver = () => {
                 }));
               }}>
                 <div className="p-4">
-                  <p className="text-xs text-solvyn-600">{item.subject}</p>
-                  <p className="font-medium mt-1">{item.question}</p>
+                  <p className="text-xs text-green-600">{item.subject}</p>
+                  <p className="font-medium mt-1 text-sm">{item.question}</p>
                 </div>
               </Card>
             ))}

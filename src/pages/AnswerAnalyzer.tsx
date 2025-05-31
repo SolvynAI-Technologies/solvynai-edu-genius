@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { aiService } from '@/services/aiService';
 import { boardOptions, gradeOptions, getSubjectOptions } from '@/data/formOptions';
-import { ArrowUpFromLineIcon, UploadIcon } from 'lucide-react';
+import { UploadIcon } from 'lucide-react';
 
 const AnswerAnalyzer = () => {
   const [formData, setFormData] = useState({
@@ -103,178 +103,206 @@ const AnswerAnalyzer = () => {
     }
   };
   
-  return (
-    <div className="container px-4 py-6 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6">AI Answer Sheet Analyzer</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <form onSubmit={handleSubmit}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Answer Information</CardTitle>
-                <CardDescription>
-                  Provide details about the answer you want to analyze
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Grade/Class</label>
-                    <Select
-                      value={formData.grade}
-                      onValueChange={(value) => handleFormChange('grade', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {gradeOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Subject</label>
-                    <Select
-                      value={formData.subject}
-                      onValueChange={(value) => handleFormChange('subject', value)}
-                      disabled={!formData.grade}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjectOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Board</label>
-                    <Select
-                      value={formData.board}
-                      onValueChange={(value) => handleFormChange('board', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select board" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {boardOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium">Question</label>
-                    <label htmlFor="question-upload" className="cursor-pointer text-xs text-solvyn-600 hover:text-solvyn-700 dark:text-solvyn-400 flex items-center">
-                      <UploadIcon className="w-3 h-3 mr-1" />
-                      Upload File
-                      <Input
-                        id="question-upload"
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload('question', e)}
-                        accept=".txt,.doc,.docx,application/msword"
-                      />
-                    </label>
-                  </div>
-                  <Textarea
-                    value={formData.question}
-                    onChange={(e) => handleFormChange('question', e.target.value)}
-                    placeholder="Enter the question text here..."
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium">Answer to Analyze</label>
-                    <label htmlFor="answer-upload" className="cursor-pointer text-xs text-solvyn-600 hover:text-solvyn-700 dark:text-solvyn-400 flex items-center">
-                      <UploadIcon className="w-3 h-3 mr-1" />
-                      Upload File
-                      <Input
-                        id="answer-upload"
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload('answer', e)}
-                        accept=".txt,.doc,.docx,application/msword"
-                      />
-                    </label>
-                  </div>
-                  <Textarea
-                    value={formData.answer}
-                    onChange={(e) => handleFormChange('answer', e.target.value)}
-                    placeholder="Enter the answer text here..."
-                    rows={5}
-                  />
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-solvyn-600 to-accent2-600 hover:from-solvyn-700 hover:to-accent2-700"
-                  disabled={isAnalyzing}
-                >
-                  {isAnalyzing ? (
-                    <span className="flex items-center">
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-t-2 border-white"></span>
-                      Analyzing...
-                    </span>
-                  ) : (
-                    "Analyze Answer"
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </form>
+  if (analysis) {
+    return (
+      <div className="container px-4 py-6 mx-auto max-w-7xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Analysis Results 📊</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              AI-powered evaluation and feedback on your answer sheet
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setAnalysis(null);
+              setFormData({
+                grade: '',
+                subject: '',
+                board: '',
+                question: '',
+                answer: '',
+              });
+            }}
+          >
+            Analyze New Answer
+          </Button>
         </div>
         
-        <div>
-          <Card className="h-full flex flex-col">
+        <Card className="h-full">
+          <CardContent className="p-6">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="whitespace-pre-wrap rounded-md bg-slate-50 dark:bg-slate-900 p-6 border">
+                {analysis}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container px-4 py-6 mx-auto max-w-4xl">
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white mb-6">
+          <h1 className="text-3xl font-bold mb-2 flex items-center">
+            📊 AI Answer Sheet Analyzer
+          </h1>
+          <p className="text-purple-100">
+            Get expert analysis and feedback on your answer sheets with AI-powered evaluation
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          {/* Analysis Configuration */}
+          <Card>
             <CardHeader>
-              <CardTitle>Analysis Results</CardTitle>
+              <CardTitle>Analysis Configuration</CardTitle>
               <CardDescription>
-                AI-powered evaluation and feedback
+                Set up your answer sheet analysis requirements
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 overflow-auto">
-              {analysis ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap rounded-md bg-slate-50 dark:bg-slate-900 p-4">
-                    {analysis}
-                  </div>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Grade</label>
+                  <Select
+                    value={formData.grade}
+                    onValueChange={(value) => handleFormChange('grade', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gradeOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-900 rounded-lg border border-dashed p-8">
-                  <div className="text-center">
-                    <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                      <ArrowUpFromLineIcon className="h-6 w-6 text-gray-500" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">No Analysis Yet</h3>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Fill the form on the left and submit an answer to see the analysis here
-                    </p>
-                  </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Subject</label>
+                  <Select
+                    value={formData.subject}
+                    onValueChange={(value) => handleFormChange('subject', value)}
+                    disabled={!formData.grade}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Board of Education</label>
+                <Select
+                  value={formData.board}
+                  onValueChange={(value) => handleFormChange('board', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boardOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Question & Answer */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Question & Answer</CardTitle>
+              <CardDescription>
+                Enter the question and student answer for analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Question</label>
+                  <label htmlFor="question-upload" className="cursor-pointer text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center">
+                    <UploadIcon className="w-3 h-3 mr-1" />
+                    Upload File
+                    <Input
+                      id="question-upload"
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload('question', e)}
+                      accept=".txt,.doc,.docx,application/msword"
+                    />
+                  </label>
+                </div>
+                <Textarea
+                  value={formData.question}
+                  onChange={(e) => handleFormChange('question', e.target.value)}
+                  placeholder="Enter the question here..."
+                  rows={4}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Student Answer</label>
+                  <label htmlFor="answer-upload" className="cursor-pointer text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center">
+                    <UploadIcon className="w-3 h-3 mr-1" />
+                    Upload File
+                    <Input
+                      id="answer-upload"
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload('answer', e)}
+                      accept=".txt,.doc,.docx,application/msword"
+                    />
+                  </label>
+                </div>
+                <Textarea
+                  value={formData.answer}
+                  onChange={(e) => handleFormChange('answer', e.target.value)}
+                  placeholder="Enter the student's answer here..."
+                  rows={6}
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                disabled={isAnalyzing}
+                size="lg"
+              >
+                {isAnalyzing ? (
+                  <span className="flex items-center">
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-t-2 border-white"></span>
+                    Analyzing Answer Sheet...
+                  </span>
+                ) : (
+                  "Analyze Answer Sheet"
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

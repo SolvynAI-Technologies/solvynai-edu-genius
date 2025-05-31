@@ -17,6 +17,8 @@ const PaperGenerator = () => {
     grade: '',
     subject: '',
     board: '',
+    paperTitle: '',
+    timeAllowed: '3 hours',
   });
   const [chapters, setChapters] = useState<Array<{ name: string; questions: { [key: string]: number } }>>([]);
   const [chapterInput, setChapterInput] = useState('');
@@ -134,235 +136,237 @@ const PaperGenerator = () => {
     }
   };
   
+  if (pdfUrl) {
+    return (
+      <div className="container px-4 py-6 mx-auto max-w-7xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Question Paper Generated! 📄</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Your custom question paper is ready for download and preview
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setPdfUrl(null);
+              setChapters([]);
+              setFormData({
+                grade: '',
+                subject: '',
+                board: '',
+                paperTitle: '',
+                timeAllowed: '3 hours',
+              });
+            }}
+          >
+            Generate New Paper
+          </Button>
+        </div>
+        <PdfViewer pdfUrl={pdfUrl} fileName={fileName} />
+      </div>
+    );
+  }
+  
   return (
-    <div className="container px-4 py-6 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6">AI Question Paper Generator</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Paper Information</CardTitle>
-              <CardDescription>
-                Provide details about the question paper you want to generate
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Grade/Class</label>
-                  <Select
-                    value={formData.grade}
-                    onValueChange={(value) => handleFormChange('grade', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {gradeOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Subject</label>
-                  <Select
-                    value={formData.subject}
-                    onValueChange={(value) => handleFormChange('subject', value)}
-                    disabled={!formData.grade}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjectOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Board</label>
-                  <Select
-                    value={formData.board}
-                    onValueChange={(value) => handleFormChange('board', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select board" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {boardOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+    <div className="container px-4 py-6 mx-auto max-w-4xl">
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white mb-6">
+          <h1 className="text-3xl font-bold mb-2 flex items-center">
+            📄 Question Paper Generator
+          </h1>
+          <p className="text-purple-100">
+            Generate custom question papers with AI in minutes!
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {/* Paper Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Paper Configuration</CardTitle>
+            <CardDescription>
+              Set up the details for your question paper.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Paper Title</label>
+                <Input
+                  value={formData.paperTitle}
+                  onChange={(e) => handleFormChange('paperTitle', e.target.value)}
+                  placeholder="e.g., Midterm Exam - Algebra I"
+                />
               </div>
               
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Add Chapters</label>
-                  <div className="flex space-x-2">
-                    <Input
-                      value={chapterInput}
-                      onChange={(e) => setChapterInput(e.target.value)}
-                      placeholder="e.g. Algebra, Trigonometry"
-                      className="flex-1"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addChapter();
-                        }
-                      }}
-                    />
-                    <Button onClick={addChapter} size="icon">
-                      <PlusIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {chapters.length > 0 && (
-                  <div className="rounded-md border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[220px]">Chapter</TableHead>
-                          {questionMarkOptions.map(option => (
-                            <TableHead key={option.value} className="text-center">
-                              {option.label}
-                            </TableHead>
-                          ))}
-                          <TableHead className="w-[50px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {chapters.map((chapter, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{chapter.name}</TableCell>
-                            {questionMarkOptions.map(option => (
-                              <TableCell key={option.value} className="p-2 text-center">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={chapter.questions[option.value]}
-                                  onChange={(e) => updateQuestionCount(
-                                    index,
-                                    option.value,
-                                    parseInt(e.target.value) || 0
-                                  )}
-                                  className="w-12 h-8 text-center mx-auto"
-                                />
-                              </TableCell>
-                            ))}
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeChapter(index)}
-                              >
-                                <TrashIcon className="h-4 w-4 text-gray-500" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-                
-                <Button
-                  onClick={handleSubmit}
-                  className="w-full mt-4 bg-gradient-to-r from-solvyn-600 to-accent2-600 hover:from-solvyn-700 hover:to-accent2-700"
-                  disabled={isGenerating}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Time Allowed</label>
+                <Input
+                  value={formData.timeAllowed}
+                  onChange={(e) => handleFormChange('timeAllowed', e.target.value)}
+                  placeholder="3 hours"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Grade</label>
+                <Select
+                  value={formData.grade}
+                  onValueChange={(value) => handleFormChange('grade', value)}
                 >
-                  {isGenerating ? (
-                    <span className="flex items-center">
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-t-2 border-white"></span>
-                      Generating Paper...
-                    </span>
-                  ) : (
-                    "Generate Question Paper"
-                  )}
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gradeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-          
-          {chapters.length > 0 && (
-            <div className="mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Paper Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <dl className="space-y-2">
-                    <div className="flex justify-between">
-                      <dt className="font-medium">Total Chapters:</dt>
-                      <dd>{chapters.length}</dd>
-                    </div>
-                    
-                    {questionMarkOptions.map(option => {
-                      const total = chapters.reduce(
-                        (sum, chapter) => sum + (chapter.questions[option.value] || 0),
-                        0
-                      );
-                      return (
-                        <div key={option.value} className="flex justify-between">
-                          <dt>{option.label} Questions:</dt>
-                          <dd>{total}</dd>
-                        </div>
-                      );
-                    })}
-                    
-                    <div className="flex justify-between pt-2 border-t">
-                      <dt className="font-medium">Total Marks:</dt>
-                      <dd className="font-medium">
-                        {chapters.reduce((sum, chapter) => {
-                          return sum + Object.entries(chapter.questions).reduce(
-                            (chapterSum, [type, count]) => {
-                              return chapterSum + (parseInt(type) * count);
-                            },
-                            0
-                          );
-                        }, 0)}
-                      </dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-        
-        <div>
-          {pdfUrl ? (
-            <PdfViewer pdfUrl={pdfUrl} fileName={fileName} />
-          ) : (
-            <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-900 rounded-lg border border-dashed p-8">
-              <div className="text-center">
-                <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
-                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium mb-1">No PDF Generated Yet</h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Fill the form on the left and generate a question paper to see the preview here
-                </p>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subject</label>
+                <Select
+                  value={formData.subject}
+                  onValueChange={(value) => handleFormChange('subject', value)}
+                  disabled={!formData.grade}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjectOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Board/Curriculum</label>
+                <Select
+                  value={formData.board}
+                  onValueChange={(value) => handleFormChange('board', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boardOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
+
+        {/* Chapters and Marks Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Chapters and Marks Distribution</CardTitle>
+            <CardDescription>
+              Add chapters and specify marks for each question type.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex space-x-2">
+              <Input
+                value={chapterInput}
+                onChange={(e) => setChapterInput(e.target.value)}
+                placeholder="Add new chapter e.g., 'Algebra'"
+                className="flex-1"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addChapter();
+                  }
+                }}
+              />
+              <Button onClick={addChapter} className="px-6">
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Add Chapter
+              </Button>
+            </div>
+            
+            {chapters.length > 0 && (
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[220px]">Chapter</TableHead>
+                      {questionMarkOptions.map(option => (
+                        <TableHead key={option.value} className="text-center">
+                          {option.label}
+                        </TableHead>
+                      ))}
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chapters.map((chapter, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{chapter.name}</TableCell>
+                        {questionMarkOptions.map(option => (
+                          <TableCell key={option.value} className="p-2 text-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={chapter.questions[option.value]}
+                              onChange={(e) => updateQuestionCount(
+                                index,
+                                option.value,
+                                parseInt(e.target.value) || 0
+                              )}
+                              className="w-12 h-8 text-center mx-auto"
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeChapter(index)}
+                          >
+                            <TrashIcon className="h-4 w-4 text-gray-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            
+            <Button
+              onClick={handleSubmit}
+              className="w-full mt-4 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+              disabled={isGenerating}
+              size="lg"
+            >
+              {isGenerating ? (
+                <span className="flex items-center">
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-t-2 border-white"></span>
+                  Generating Paper...
+                </span>
+              ) : (
+                "Generate Question Paper"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
