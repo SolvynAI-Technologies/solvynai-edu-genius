@@ -1,35 +1,70 @@
 
-// This is a mock service for demonstration. In a real app, you would call the DeepSeek API directly.
-// For now, we'll simulate responses with realistic delays.
-
 import { QuestionPaperRequest, QuizQuestion } from '@/types';
 
-const API_KEY = 'sk-8917d4bbdd6b46d7949860b4d55e7af4';
+const DEEPSEEK_API_KEY = 'sk-8917d4bbdd6b46d7949860b4d55e7af4';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
-// Simulating network delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Utility function for API calls
+const callDeepSeekAPI = async (prompt: string, systemPrompt: string = 'You are a helpful AI assistant.'): Promise<string> => {
+  try {
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('DeepSeek API error:', error);
+    throw new Error('Failed to get response from AI service');
+  }
+};
 
 export const aiService = {
   generateQuestionPaper: async (request: QuestionPaperRequest): Promise<string> => {
     console.log('Question Paper Request:', request);
-    // This would be a real API call to DeepSeek
-    await delay(3000);
     
-    // Mock PDF content
-    return `
-      # ${request.subject} Question Paper
-      ## Grade ${request.grade} - ${request.board}
-      
-      ${request.chapters.map((chapter, i) => `
-        ### ${chapter.name}
-        ${Object.entries(chapter.questions).map(([type, count]) => {
-          const marks = parseInt(type);
-          return Array(count).fill(0).map((_, j) => 
-            `Q${i+1}.${j+1} (${marks} mark${marks > 1 ? 's' : ''}): Sample question for ${chapter.name} worth ${marks} mark${marks > 1 ? 's' : ''}.`
-          ).join('\n\n');
-        }).join('\n\n')}
-      `).join('\n\n')}
-    `;
+    const prompt = `Generate a comprehensive question paper with the following specifications:
+    
+    Grade: ${request.grade}
+    Subject: ${request.subject}
+    Board: ${request.board}
+    
+    Chapters and Questions:
+    ${request.chapters.map(chapter => `
+    Chapter: ${chapter.name}
+    ${Object.entries(chapter.questions).map(([marks, count]) => 
+      `- ${count} questions worth ${marks} each`
+    ).join('\n')}
+    `).join('\n')}
+    
+    Please create a well-structured question paper with proper formatting, clear instructions, and age-appropriate questions for the specified grade level. Include a mix of question types (MCQ, short answer, long answer) based on the mark distribution.`;
+
+    const systemPrompt = `You are an expert educator and question paper creator. Create educational content that is appropriate for the specified grade level and follows the curriculum standards of the given board of education. Format the output as a proper question paper with clear sections and numbering.`;
+
+    return await callDeepSeekAPI(prompt, systemPrompt);
   },
   
   analyzeAnswerSheet: async (
@@ -40,38 +75,27 @@ export const aiService = {
     answer: string
   ): Promise<string> => {
     console.log('Analyzing answer sheet for:', { grade, subject, board });
-    await delay(2000);
     
-    // Mock analysis
-    return `
-      # Answer Evaluation
-      
-      ## Question
-      ${question}
-      
-      ## Student Answer
-      ${answer}
-      
-      ## Evaluation
-      - Accuracy: 85%
-      - Content Understanding: Good
-      - Presentation: Average
-      
-      ## Feedback
-      The answer demonstrates a good understanding of the core concepts. However, there are a few areas that could be improved:
-      
-      1. The explanation of [key concept] could be more detailed
-      2. Include more examples to support your arguments
-      3. The conclusion could be stronger by summarizing the main points
-      
-      ## Suggested Improvements
-      To improve this answer, consider:
-      - Adding specific examples from the textbook
-      - Explaining the relationship between [concept A] and [concept B]
-      - Using more precise terminology when describing [specific process]
-      
-      Overall, this is a good attempt that shows clear understanding of the subject matter.
-    `;
+    const prompt = `Please analyze this student's answer and provide detailed feedback:
+    
+    Grade: ${grade}
+    Subject: ${subject}
+    Board: ${board}
+    
+    Question: ${question}
+    
+    Student's Answer: ${answer}
+    
+    Please provide:
+    1. A score out of 10
+    2. Detailed analysis of correctness
+    3. Areas of improvement
+    4. Specific suggestions for better answers
+    5. Recognition of what the student did well`;
+
+    const systemPrompt = `You are an expert teacher and evaluator. Analyze student answers with constructive feedback, highlighting both strengths and areas for improvement. Be encouraging while being honest about the quality of the response. Provide specific, actionable advice.`;
+
+    return await callDeepSeekAPI(prompt, systemPrompt);
   },
   
   solveDoubt: async (
@@ -81,36 +105,25 @@ export const aiService = {
     question: string
   ): Promise<string> => {
     console.log('Solving doubt for:', { grade, subject, board });
-    await delay(2000);
     
-    // Mock solution
-    return `
-      # Solution to Your Question
-      
-      ## Step-by-Step Solution
-      
-      ### Step 1: Understand the problem
-      First, let's identify what we're looking for and what information is provided.
-      
-      ### Step 2: Plan the approach
-      For this type of problem, we can use the following strategy...
-      
-      ### Step 3: Execute the solution
-      [Detailed walkthrough with calculations/reasoning]
-      
-      ### Step 4: Verify the answer
-      We can check our solution by [verification method]
-      
-      ## How to approach similar problems
-      When you encounter this type of question in the future:
-      
-      1. Start by identifying the key concepts involved
-      2. Break down the problem into smaller parts
-      3. Apply the relevant formulas/principles systematically
-      4. Check your work by [appropriate verification technique]
-      
-      This approach can be applied to a wide range of similar problems in ${subject}.
-    `;
+    const prompt = `Please help solve this academic question with a detailed explanation:
+    
+    Grade: ${grade}
+    Subject: ${subject}
+    Board: ${board}
+    
+    Question: ${question}
+    
+    Please provide:
+    1. A clear, step-by-step solution
+    2. Explanation of concepts involved
+    3. Tips for solving similar problems
+    4. Common mistakes to avoid
+    5. Additional practice suggestions`;
+
+    const systemPrompt = `You are an expert tutor specializing in ${subject}. Provide clear, step-by-step explanations that are appropriate for a ${grade} student following the ${board} curriculum. Make complex concepts easy to understand with examples and analogies when helpful.`;
+
+    return await callDeepSeekAPI(prompt, systemPrompt);
   },
   
   generateQuiz: async (
@@ -121,37 +134,101 @@ export const aiService = {
     numQuestions: number
   ): Promise<QuizQuestion[]> => {
     console.log('Generating quiz for:', { grade, subject, board, topics, numQuestions });
-    await delay(2500);
     
-    // Mock quiz questions
-    const questions: QuizQuestion[] = [];
+    const prompt = `Create a quiz with ${numQuestions} multiple choice questions for:
     
-    for (let i = 0; i < numQuestions; i++) {
-      questions.push({
-        id: `q-${i+1}`,
-        question: `Sample ${subject} question about ${topics[i % topics.length]} for grade ${grade}?`,
-        options: [
-          `Option A for question ${i+1}`,
-          `Option B for question ${i+1}`,
-          `Option C for question ${i+1}`,
-          `Option D for question ${i+1}`
-        ],
-        correctAnswer: `Option ${['A', 'B', 'C', 'D'][i % 4]} for question ${i+1}`,
-        explanation: `This is the explanation for why option ${['A', 'B', 'C', 'D'][i % 4]} is correct. It relates to the key concept of [specific topic] in ${subject}.`
-      });
+    Grade: ${grade}
+    Subject: ${subject}
+    Board: ${board}
+    Topics: ${topics.join(', ')}
+    
+    For each question, provide:
+    1. A clear question
+    2. Four multiple choice options (A, B, C, D)
+    3. The correct answer
+    4. A brief explanation of why the answer is correct
+    
+    Format as JSON array with this structure:
+    [
+      {
+        "question": "Question text",
+        "options": ["Option A", "Option B", "Option C", "Option D"],
+        "correctAnswer": "Option A",
+        "explanation": "Explanation text"
+      }
+    ]
+    
+    Make sure questions are appropriate for the grade level and cover the specified topics evenly.`;
+
+    const systemPrompt = `You are an expert quiz creator for educational content. Create engaging, challenging, and fair multiple choice questions that test understanding rather than just memorization. Ensure all options are plausible and the correct answer is clearly the best choice.`;
+
+    try {
+      const response = await callDeepSeekAPI(prompt, systemPrompt);
+      
+      // Try to parse JSON response
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const questionsData = JSON.parse(jsonMatch[0]);
+        return questionsData.map((q: any, index: number) => ({
+          id: `q-${index + 1}`,
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation
+        }));
+      } else {
+        throw new Error('Invalid JSON response');
+      }
+    } catch (error) {
+      console.error('Error parsing quiz response:', error);
+      // Fallback to mock questions if parsing fails
+      const fallbackQuestions: QuizQuestion[] = [];
+      for (let i = 0; i < numQuestions; i++) {
+        fallbackQuestions.push({
+          id: `q-${i+1}`,
+          question: `Sample ${subject} question ${i+1} about ${topics[i % topics.length]} for grade ${grade}?`,
+          options: [
+            `Option A for question ${i+1}`,
+            `Option B for question ${i+1}`,
+            `Option C for question ${i+1}`,
+            `Option D for question ${i+1}`
+          ],
+          correctAnswer: `Option ${['A', 'B', 'C', 'D'][i % 4]} for question ${i+1}`,
+          explanation: `This is the explanation for why option ${['A', 'B', 'C', 'D'][i % 4]} is correct for question ${i+1}.`
+        });
+      }
+      return fallbackQuestions;
     }
-    
-    return questions;
   }
 };
 
 // PDF generation utility
 export const generatePDF = async (content: string, fileName: string = 'document.pdf'): Promise<string> => {
-  // In a real app, this would generate a PDF file
-  // For now, we'll just return the content as a mock PDF URL
   console.log('Generating PDF with content:', content.substring(0, 100) + '...');
-  await delay(1000);
   
-  // Mock PDF URL that would be generated
-  return `data:application/pdf;base64,JVBERi0xLjcKJeLjz9MKNyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDEgMCBSIC9MYXN0TW9kaWZpZWQgKEQ6M`;
+  // Simple HTML to PDF conversion (mock implementation)
+  // In a real implementation, you would use a PDF library like jsPDF or a service
+  const htmlContent = `
+    <html>
+      <head>
+        <title>${fileName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+          h1, h2, h3 { color: #333; }
+          .header { text-align: center; margin-bottom: 40px; }
+          .content { white-space: pre-wrap; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SolvynAI - Educational Content</h1>
+        </div>
+        <div class="content">${content.replace(/\n/g, '<br>')}</div>
+      </body>
+    </html>
+  `;
+  
+  // Create a blob URL for download (mock implementation)
+  const blob = new Blob([htmlContent], { type: 'text/html' });
+  return URL.createObjectURL(blob);
 };

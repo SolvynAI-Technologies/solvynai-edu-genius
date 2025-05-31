@@ -32,7 +32,7 @@ const Layout: React.FC<LayoutProps> = ({ children, requireAuth = true }) => {
     return <AppSidebarWrapper>{children}</AppSidebarWrapper>;
   }
 
-  return <>{children}</>;
+  return <div className="min-h-screen">{children}</div>;
 };
 
 export default Layout;
