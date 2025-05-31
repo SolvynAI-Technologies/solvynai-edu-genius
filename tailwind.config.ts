@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,32 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				solvyn: {
+					50: '#f0f7ff',
+					100: '#e0effe',
+					200: '#bae0fd',
+					300: '#7cc8fb',
+					400: '#36aaf4',
+					500: '#0c8fe4',
+					600: '#006fc3',
+					700: '#0059a0',
+					800: '#064b84',
+					900: '#0b406e',
+					950: '#07284a'
+				},
+				accent2: {
+					50: '#f3f1ff',
+					100: '#ebe5ff',
+					200: '#d9cfff',
+					300: '#bfaaff',
+					400: '#a17cff',
+					500: '#844dff',
+					600: '#7a2bff',
+					700: '#6b18f5',
+					800: '#5a16cf',
+					900: '#4b16a6',
+					950: '#2e0979'
 				}
 			},
 			borderRadius: {
@@ -70,25 +97,22 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'tree-grow': {
+					'0%': { transform: 'scale(0.7)', opacity: '0.7' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'tree-grow': 'tree-grow linear'
 			}
 		}
 	},
